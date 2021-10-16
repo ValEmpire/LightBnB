@@ -4,12 +4,14 @@ $(() => {
 
   window.views_manager = {};
 
-  window.views_manager.show = function(item) {
+  window.views_manager.show = function(item, data = '') {
     $newPropertyForm.detach();
     $propertyListings.detach();
     $searchPropertyForm.detach();
     $logInForm.detach();
     $signUpForm.detach();
+    $newReservationForm.detach();
+
 
     switch (item) {
       case 'listings':
@@ -27,6 +29,11 @@ $(() => {
       case 'signUp':
         $signUpForm.appendTo($main);
         break;
+      case 'newReservation':
+        const dataTag = `<h4>${data}</h4>`;
+        $newReservationForm.appendTo($main);
+        $(dataTag).appendTo("#datatag");
+        break;
       case 'error': {
         const $error = $(`<p>${arguments[1]}</p>`);
         $error.appendTo('body');
@@ -34,10 +41,10 @@ $(() => {
           $error.remove();
           views_manager.show('listings');
         }, 2000);
-        
+
         break;
       }
     }
   }
-  
+
 });

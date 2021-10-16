@@ -164,7 +164,7 @@ const getAllProperties = function (options, limit = 10) {
   queryString += `LIMIT $${queryParams.length};`;
 
   // 5
-  console.log(queryString, queryParams);
+  // console.log(queryString, queryParams);
 
   // 6
   return pool
@@ -184,39 +184,7 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  const {
-    owner_id,
-    title,
-    description,
-    thumbnail_photo_url,
-    cover_photo_url,
-    cost_per_night,
-    street,
-    city,
-    province,
-    post_code,
-    country,
-    parking_spaces,
-    number_of_bathrooms,
-    number_of_bedrooms,
-  } = property;
-
-  const values = [
-    owner_id,
-    title,
-    description,
-    thumbnail_photo_url,
-    cover_photo_url,
-    cost_per_night,
-    street,
-    city,
-    province,
-    post_code,
-    country,
-    parking_spaces,
-    number_of_bathrooms,
-    number_of_bedrooms
-  ];
+  const values = [...property];
 
   const query = `INSERT INTO properties (
     owner_id,
@@ -247,3 +215,22 @@ const addProperty = function(property) {
     });
 }
 exports.addProperty = addProperty;
+
+
+const addReservation = function(reservation) {
+
+  // console.log(reservation);
+  console.log(reservation)
+
+  /*
+   * Adds a reservation from a specific user to the database
+   */
+  return pool.query(`
+    INSERT INTO reservations (start_date, end_date, property_id, guest_id)
+    VALUES ($1, $2, $3, $4) RETURNING *;
+  `, [reservation.start_date, reservation.end_date, reservation.property_id, reservation.guest_id])
+  .then(res => res.rows[0])
+  .catch(err => console.log(err.message));
+}
+
+exports.addReservation = addReservation;

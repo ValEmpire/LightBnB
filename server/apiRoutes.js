@@ -6,7 +6,7 @@ module.exports = function(router, database) {
     .catch(e => {
       console.error(e);
       res.send(e)
-    }); 
+    });
   });
 
   router.get('/reservations', (req, res) => {
@@ -35,5 +35,20 @@ module.exports = function(router, database) {
       });
   });
 
+  router.post('/reservations', (req, res) => {
+    const userId = req.session.userId;
+    if (userId) {
+      database.addReservation({...req.body, guest_id: userId})
+      .then(reservation => {
+        res.send(reservation)
+      })
+      .catch(e => {
+        console.error(e);
+        res.send(e);
+      })
+    }
+  });
+
   return router;
 }
+
