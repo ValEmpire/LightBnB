@@ -96,7 +96,7 @@ const getFulfilledReservations = function (guest_id, limit = 10) {
     SELECT properties.*, reservations.*, avg(rating) as average_rating
     FROM reservations
     JOIN properties ON reservations.property_id = properties.id
-    JOIN property_reviews ON properties.id = property_reviews.property_id
+    LEFT JOIN property_reviews ON properties.id = property_reviews.property_id
     WHERE reservations.guest_id = $1
     AND reservations.end_date < now()::date
     GROUP BY properties.id, reservations.id
@@ -129,9 +129,15 @@ const getAllProperties = function (options, limit = 10) {
   let queryString = `
     SELECT properties.*, avg(property_reviews.rating) as average_rating, count(property_reviews.rating) as review_count
     FROM properties
-    JOIN property_reviews ON properties.id = property_id `;
+    LEFT JOIN property_reviews ON properties.id = property_id `;
 
   // 3
+
+  if (options.owner_id) {
+    queryParams.push(`${options.owner_id}`);
+    queryString += `WHERE owner_id = $${queryParams.length} `;
+  }
+
   if (options.city) {
     queryParams.push(`%${options.city}%`);
     queryString += `WHERE city LIKE $${queryParams.length} `;
@@ -146,14 +152,14 @@ const getAllProperties = function (options, limit = 10) {
 
   // 4
 
-  if (options.minimum_rating) {
+  if (options.minimum_rating && options.minimum_rating !== "0") {
     queryParams.push(parseInt(options.minimum_rating));
   }
 
   queryString += `
     GROUP BY properties.id
     ${
-      options.minimum_rating
+      options.minimum_rating && options.minimum_rating !== "0"
         ? `HAVING avg(property_reviews.rating) > $${queryParams.length}`
         : ""
     }
@@ -162,6 +168,9 @@ const getAllProperties = function (options, limit = 10) {
 
   queryParams.push(limit);
   queryString += `LIMIT $${queryParams.length};`;
+
+  console.log(queryString);
+  console.log(queryParams);
 
   // 5
   // console.log(queryString, queryParams);
@@ -184,23 +193,25 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function (property) {
-  const values = [...property];
+  const values = Object.values(property);
+
+  console.log(values);
 
   const query = `INSERT INTO properties (
     owner_id,
     title,
     description,
+    number_of_bedrooms,
+    number_of_bathrooms,
+    parking_spaces,
+    cost_per_night,
     thumbnail_photo_url,
     cover_photo_url,
-    cost_per_night,
     street,
+    country,
     city,
     province,
-    post_code,
-    country,
-    parking_spaces,
-    number_of_bathrooms,
-    number_of_bedrooms
+    post_code
   ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
   RETURNING *`;
 
@@ -250,7 +261,7 @@ const getUpcomingReservations = function (guest_id, limit = 10) {
   SELECT properties.*, reservations.*, avg(rating) as average_rating
   FROM reservations
   JOIN properties ON reservations.property_id = properties.id
-  JOIN property_reviews ON properties.id = property_reviews.property_id
+  LEFT JOIN property_reviews ON properties.id = property_reviews.property_id
   WHERE reservations.guest_id = $1
   AND reservations.start_date > now()::date
   GROUP BY properties.id, reservations.id
